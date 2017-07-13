@@ -14,12 +14,13 @@ class Preprocess():
         self.val_paths = None
         self.test_paths = None
         self.path_to_processed = os.path.join(path_to_babi, "babi_processed")
-
         self._c_word_set = set()
         self._q_word_set = set()
         self._a_word_set = set()
         self._cqa_word_set = set()
-        self._max_context_len = 20
+        self.c_max_len = 20
+        self.s_max_len = 0
+        self.q_max_len = 0
 
     def set_path(self):
         """
@@ -107,6 +108,13 @@ class Preprocess():
             print("the number of answers: {}".format(len(answer)))
             print("the number of contexts: {}".format(len(context)))
             print("the number of labels: {}".format(len(label)))
+        for q in question:
+            if len(q) > self.q_max_len:
+                self.q_max_len = len(q)
+        for c in context:
+            for s in c:
+                if len(s) > self.s_max_len:
+                    self.s_max_len = len(s)
         return context, label, question, answer
 
     def split_all_clqa(self, paths):
@@ -194,7 +202,7 @@ class Preprocess():
     def _index_label(self, labels):
         indexed_ls = []
         for label in labels:
-            indexed_ls.append(np.eye(self._max_context_len)[label])
+            indexed_ls.append(np.eye(self.c_max_len)[label])
         return indexed_ls
 
     def _index_question(self, questions):
@@ -285,6 +293,10 @@ def main(path_to_babi):
     preprocess.load_train()
     preprocess.load_val()
     preprocess.load_test()
+    with open(os.path.join(self.path_to_processed, 'config.txt', 'w')) as f:
+        f.write(self.c_max_len)
+        f.write(self.s_max_len)
+        f.write(self.q_max_len)
 
 if __name__ == '__main__':
     if sys.argv[1] == 'path':
