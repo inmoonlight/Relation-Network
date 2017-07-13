@@ -297,6 +297,7 @@ def main(path_to_babi):
         f.write(self.c_max_len)
         f.write(self.s_max_len)
         f.write(self.q_max_len)
+        f.write(self.path_to_processed)
 
 if __name__ == '__main__':
     if sys.argv[1] == 'path':
