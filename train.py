@@ -6,10 +6,9 @@ from datetime import datetime
 import tensorflow as tf
 from time import time
 
-import config
 import model
 
-def read_data(file_path= config.babi_processed):
+def read_data(file_path= config['babi_processed']):
     with open(os.path.join(file_path, 'train_dataset_masked.pkl'), 'rb') as f:
         train = pickle.load(f)
     with open(os.path.join(file_path, 'val_dataset_masked.pkl'), 'rb') as f:
@@ -17,11 +16,9 @@ def read_data(file_path= config.babi_processed):
 
     [train_q, train_a, train_c, train_l, train_c_real_len, train_q_real_len] = train
     [val_q, val_a, val_c, val_l, val_c_real_len, val_q_real_len] = val
-    [test_q, test_a, test_c, test_l, test_c_real_len, test_q_real_len] = test
 
     return ([train_q, train_a, train_c, train_l, train_c_real_len, train_q_real_len],\
-           [val_q, val_a, val_c, val_l, val_c_real_len, val_q_real_len],\
-           [test_q, test_a, test_c, test_l, test_c_real_len, test_q_real_len])
+           [val_q, val_a, val_c, val_l, val_c_real_len, val_q_real_len])
 
 
 def batch_iter(c, q, l, a, c_real_len, q_real_len, batch_size, num_epochs, shuffle=True):
@@ -79,8 +76,19 @@ def batch_iter(c, q, l, a, c_real_len, q_real_len, batch_size, num_epochs, shuff
 
 def parse_config(string):
     #parsing txt file
-    output = string
-    return output
+    result = dict()
+    args = string.split("\t")
+    result['c_max_len'] = int(args[0])
+    result['s_max_len'] = int(args[1])
+    result['q_max_len'] = int(args[2])
+    result['babi_processed'] = args[3] # path
+    result['batch_size'] = int(args[4])
+    result['s_hidden'] = int(args[5])
+    result['q_hidden'] = int(args[5])
+    result['learning_rate'] = 2e-4
+    result['iter_time'] = 150
+    result['display_step'] = 100
+    return result
 
 #flags setting
 flags = tf.app.flags
@@ -92,6 +100,7 @@ flags.DEFINE_string('save_dir', 'path', 'description')  # './babi_result/lookup_
 FLAGS = flags.FLAGS
 
 def main():
+    global config
     config = parse_config(open('config.txt', 'r'))
     date = datetime.fromtimestamp(time()).strftime('%Y-%m-%d_%H:%M:%S')
     model_id = "RN-" + date
@@ -105,7 +114,7 @@ def main():
         os.makedirs(save_summary_path)
         os.makedirs(save_variable_path)
 
-    (train, val, test) = read_data()
+    (train, val) = read_data()
     # rain_q, train_a, train_c, train_l, train_c_real_len, train_q_real_len
 
     with tf.Graph().as_default():
@@ -116,7 +125,7 @@ def main():
 
             # Define Training procedure
             global_step = tf.Variable(0, name='global_step', trainable = False)
-            opt = tf.train.Adamoptimizer(config.learning_rate)
+            opt = tf.train.Adamoptimizer(config['learning_rate'])
             optimizer = opt.minimize(rn.loss, global_step = global_step)
 
             loss_train = tf.summary.scalar("loss_train", rn.loss)
@@ -137,8 +146,8 @@ def main():
                                      a=train[1],
                                      c_real_len=train[4],
                                      q_real_len=train[5],
-                                     num_epochs=config.iter_time,
-                                     batch_size= config.batch_size)
+                                     num_epochs=config['iter_time'],
+                                     batch_size= config['batch_size'])
             for train in batch_train:
                 c_batch, q_batch, l_batch, a_batch, c_real_len_batch, q_real_len_batch = zip(*train)
                 feed_dict = {rn.context: c_batch,
@@ -152,7 +161,7 @@ def main():
                 optimizer.run(feed_dict=feed_dict)
                 train_summary = sess.run(train_summary_ops, feed_dict=feed_dict)
                 summary_writer.add_summary(train_summary, current_step)
-                if current_step % (config.display_step) == 0:
+                if current_step % (config['display_step']) == 0:
                     print("step: {}".format(current_step))
                     print("====validation start====")
                     batch_val = batch_iter(c = val[2],
@@ -162,7 +171,7 @@ def main():
                                            c_real_len=val[4],
                                            q_real_len=train[5],
                                            num_epochs=1,
-                                           batch_size=config.batch_size)
+                                           batch_size=config['batch_size'])
                     accs = []
                     for val in batch_val:
                         c_val, q_val, l_val, a_val, c_real_len_val, q_real_len_val = zip(*val)

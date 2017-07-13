@@ -16,16 +16,16 @@ class Model(object):
                  question_vocab_size = 88,
                  answer_vocab_size=159):
 
-        self.batch_size = config.batch_size
+        self.batch_size = config['batch_size']
         self.seed = seed
-        self.c_max_len = config.c_max_len  # 20
-        self.s_max_len = config.s_max_len  # 12
-        self.q_max_len = config.q_max_len  # 12
+        self.c_max_len = config['c_max_len'] # 20
+        self.s_max_len = config['s_max_len'] # 12
+        self.q_max_len = config['q_max_len'] # 12
         self.mask_index = 0
-        self.s_input_step = config.s_max_len
-        self.s_hidden = config.s_hidden  # 32
-        self.q_input_step = config.q_max_len
-        self.q_hidden = config.q_hidden  # 32
+        self.s_input_step = config['s_max_len']
+        self.s_hidden = config['s_hidden'] # 32
+        self.q_input_step = config['q_max_len']
+        self.q_hidden = config['q_hidden'] # 32
         self.c_word_embed = c_word_embed
         self.q_word_embed = q_word_embed
         self.context_vocab_size = context_vocab_size + 1  # consider masking

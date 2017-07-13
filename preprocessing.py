@@ -3,6 +3,7 @@ import os
 import pickle
 import re
 import sys
+import argparse
 
 class Preprocess():
 
@@ -290,22 +291,41 @@ class Preprocess():
         with open(os.path.join(self.path_to_processed, 'test_dataset.pkl'), 'wb') as f:
             pickle.dump(test_dataset, f)
 
-def main(path_to_babi):
-    preprocess = Preprocess(path_to_babi) 
+def get_args_parser():
+    """
+    python preprocessing.py -path ../ -batch_size 64 -hidden_units 32 -learning_rate 2e-4 -iter_time 150 -display_step 100
+    :return:
+    """
+    _parser = argparse.ArgumentParser()
+    _parser.add_argument('-path', '--path_to_babi')
+    _parser.add_argument('-batch_size', '--batch_size')
+    _parser.add_argument('-hidden_units', '--hidden_units')
+    _parser.add_argument('-learning_rate', '--learning_rate')
+    _parser.add_argument('-iter_time', '--iter_time')
+    _parser.add_argument('-display_step', '--display_step')
+    return _parser
+
+def main():
+    args = get_args_parser().parse_args()
+
+    preprocess = Preprocess(args.path_to_babi)
     preprocess.set_path()
     preprocess._set_word_set()
     preprocess.load_train()
     preprocess.load_val()
     preprocess.load_test()
+
     with open(os.path.join(preprocess.path_to_processed, 'config.txt'), 'w') as f:
         f.write(str(preprocess.c_max_len)+"\t")
         f.write(str(preprocess.s_max_len)+"\t")
         f.write(str(preprocess.q_max_len)+"\t")
-        f.write(str(preprocess.path_to_processed))
+        f.write(str(preprocess.path_to_processed)+'\t')
+        f.write(str(args.batch_size)+"\t") # batch_size
+        f.write(str(args.hidden_units)+"\t") # hidden units
+        f.write(str(args.learning_rate) + "\t")  # hidden units
+        f.write(str(args.iter_time) + "\t")  # hidden units
+        f.write(str(args.display_step) + "\t")  # hidden units
+
 
 if __name__ == '__main__':
-    if sys.argv[1] == 'path':
-        path_to_babi = sys.argv[2]
-    else:
-        print("wrong input")
-    main(path_to_babi)
+    main()
