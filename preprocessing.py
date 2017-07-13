@@ -287,5 +287,8 @@ def main(path_to_babi):
     preprocess.load_test()
 
 if __name__ == '__main__':
-    path_to_babi = sys.argv[2]
+    if sys.argv[1] == 'path':
+        path_to_babi = sys.argv[2]
+    else:
+        print("wrong input")
     main(path_to_babi)
