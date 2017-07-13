@@ -240,7 +240,11 @@ class Preprocess():
             else:
                 indexed_a = a_word_index[answer]
                 indexed_as.append(indexed_a)
-        with open(os.path.join(self.path_to_processed, 'answer_word_dict.pkl', 'wb')) as f:
+
+        if not os.path.exists(self.path_to_processed):
+            os.makedirs(self.path_to_processed)
+
+        with open(os.path.join(self.path_to_processed, 'answer_word_dict.pkl'), 'wb') as f:
             pickle.dump(a_word_dict, f)
         return indexed_as
 
@@ -253,7 +257,7 @@ class Preprocess():
         train_dataset = (train_question_index, train_answer_index, train_context_index, train_label_index)
         if not os.path.exists(self.path_to_processed):
             os.makedirs(self.path_to_processed)
-        with open(os.path.join(self.path_to_processed, 'train_dataset.pkl', 'wb')) as f:
+        with open(os.path.join(self.path_to_processed, 'train_dataset.pkl'), 'wb') as f:
             pickle.dump(train_dataset, f)
 
     def load_val(self):
@@ -265,16 +269,16 @@ class Preprocess():
         val_dataset = (val_question_index, val_answer_index, val_context_index, val_label_index)
         if not os.path.exists(self.path_to_processed):
             os.makedirs(self.path_to_processed)
-        with open(os.path.join(self.path_to_processed, 'val_dataset.pkl', 'wb')) as f:
+        with open(os.path.join(self.path_to_processed, 'val_dataset.pkl'), 'wb') as f:
             pickle.dump(val_dataset, f)
 
     def load_test(self):
         test_context, test_label, test_question, test_answer = self.split_all_clqa(self.test_paths)
-        with open(os.path.join(self.path_to_processed, 'test_context.pkl', 'wb')) as f:
+        with open(os.path.join(self.path_to_processed, 'test_context.pkl'), 'wb') as f:
             pickle.dump(test_context, f)
-        with open(os.path.join(self.path_to_processed, 'test_question.pkl', 'wb')) as f:
+        with open(os.path.join(self.path_to_processed, 'test_question.pkl'), 'wb') as f:
             pickle.dump(test_question, f)
-        with open(os.path.join(self.path_to_processed, 'test_answer.pkl', 'wb')) as f:
+        with open(os.path.join(self.path_to_processed, 'test_answer.pkl'), 'wb') as f:
             pickle.dump(test_answer, f)
         test_context_index = self._index_context(test_context)
         test_label_index = self._index_label(test_label)
@@ -283,7 +287,7 @@ class Preprocess():
         test_dataset = (test_question_index, test_answer_index, test_context_index, test_label_index)
         if not os.path.exists(self.path_to_processed):
             os.makedirs(self.path_to_processed)
-        with open(os.path.join(self.path_to_processed, 'test_dataset.pkl', 'wb')) as f:
+        with open(os.path.join(self.path_to_processed, 'test_dataset.pkl'), 'wb') as f:
             pickle.dump(test_dataset, f)
 
 def main(path_to_babi):
@@ -293,11 +297,11 @@ def main(path_to_babi):
     preprocess.load_train()
     preprocess.load_val()
     preprocess.load_test()
-    with open(os.path.join(self.path_to_processed, 'config.txt', 'w')) as f:
-        f.write(self.c_max_len)
-        f.write(self.s_max_len)
-        f.write(self.q_max_len)
-        f.write(self.path_to_processed)
+    with open(os.path.join(preprocess.path_to_processed, 'config.txt'), 'w') as f:
+        f.write(str(preprocess.c_max_len)+"\t")
+        f.write(str(preprocess.s_max_len)+"\t")
+        f.write(str(preprocess.q_max_len)+"\t")
+        f.write(str(preprocess.path_to_processed))
 
 if __name__ == '__main__':
     if sys.argv[1] == 'path':
