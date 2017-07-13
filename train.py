@@ -1,19 +1,12 @@
-import itertools
 import numpy as np
 import os
-import pandas as pd
 import pickle
 import sys
 sys.path.append('../')
 
 from datetime import datetime
 import tensorflow as tf
-from tensorflow.contrib.layers import batch_norm
-from tensorflow.contrib.layers import fully_connected
-from tensorflow.contrib import rnn
-from tensorflow.contrib import slim
 from time import time
-from tqdm import tqdm
 import Model
 
 def read_data(file_path = './babi_preprocessed'):
@@ -120,41 +113,81 @@ def main():
     (train, val, test) = read_data()
     # rain_q, train_a, train_c, train_l, train_c_real_len, train_q_real_len
 
-    model = Model(config)
+    with tf.Graph().as_default():
+        sess = tf.Session()
+        start_time = time()
+        with sess.as_default():
+            rn = Model(config)
 
-    start_time = time()
-    with tf.Session() as sess:
-        init = tf.global_variables_initializer()
-        sess.run(init)
-        saver = tf.train.Saver(max_to_keep=4)
-        summary_writer = tf.summary.FileWriter(save_summary_path, sess.graph)
-        print("====training====")
-        batch_train = batch_iter(c=train[2], q=train[0], l=train[3], a=train[1], c_real_len=train[4], q_real_len=train[5])
-        for train in batch_train:
-            c_batch, q_batch, l_batch, a_batch, c_real_len_batch, q_real_len_batch = zip(*train)
-            feed_dict = {c: c_batch, q: q_batch, l: l_batch, a: a_batch, c_real_len: c_real_len_batch,
-                         q_real_len: q_real_len_batch, training_phase: True}
-            current_step = sess.run(global_step, feed_dict=feed_dict)
-            optimizer.run(feed_dict=feed_dict)
-            train_summary = sess.run(train_summary_ops, feed_dict=feed_dict)
-            summary_writer.add_summary(train_summary, current_step)
-            if current_step % (display_step) == 0:
-                print("step: {}".format(current_step))
-                print("====validation start====")
-                batch_val = batch_iter(val_c, val_q, val_l, val_a, val_c_real_len, val_q_real_len, num_epochs=1)
-                accs = []
-                for val in batch_val:
-                    c_val, q_val, l_val, a_val, c_real_len_val, q_real_len_val = zip(*val)
-                    feed_dict = {c: c_val, q: q_val, l: l_val, a: a_val, c_real_len: c_real_len_val,
-                                 q_real_len: q_real_len_val, training_phase: False}
-                    acc = accuracy.eval(feed_dict=feed_dict)
-                    accs.append(acc)
-                    val_summary = sess.run(val_summary_ops, feed_dict=feed_dict)
-                    summary_writer.add_summary(val_summary, current_step)
-                print("Mean accuracy=" + str(sum(accs) / len(accs)))
-                saver.save(sess, save_path=save_summary_path, global_step=current_step)
-                print("====training====")
-    end_time = time()
+            # Define Training procedure
+            global_step = tf.Variable(0, name='global_step', trainable = False)
+            optimizer = tf.train.Adamoptimizer(config.learning_rate)
+            grads_and_vars = optimizer.compute_gradients(rn.loss)
+            train_op = optimizer.apply_gradients(grads_and_vars, global_step = global_step)
+
+            accuracy_train = tf.summary.scalar("accuracy_train", rn.accuracy)
+            loss_train = tf.summary.scalar("loss_train", rn.loss)
+            train_summary_ops = tf.summary.merge([loss_train, accuracy_train])
+
+            accuracy_val = tf.summar("accuracy_val", rn.accuracy)
+            loss_val = tf.summary.scalar("loss_val", rn.loss)
+            val_summary_ops = tf.summary.merge([loss_val, accuracy_val])
+
+
+            saver = tf.train.Saver(tf.global_variables(),max_to_keep=4)
+            sess.run(tf.global_variables_initializer())
+
+            summary_writer = tf.summary.FileWriter(save_summary_path, sess.graph)
+            batch_train = batch_iter(c=train[2],
+                                     q=train[0],
+                                     l=train[3],
+                                     a=train[1],
+                                     c_real_len=train[4],
+                                     q_real_len=train[5],
+                                     num_epochs=config.iter_time,
+                                     batch_size= config.batch_size)
+            for train in batch_train:
+                c_batch, q_batch, l_batch, a_batch, c_real_len_batch, q_real_len_batch = zip(*train)
+                feed_dict = {rn.context: c_batch,
+                             rn.question: q_batch,
+                             rn.label: l_batch,
+                             rn.answer: a_batch,
+                             rn.context_real_len: c_real_len_batch,
+                             rn.question_real_len: q_real_len_batch,
+                             rn.is_training: True}
+                current_step = sess.run(global_step, feed_dict=feed_dict)
+                optimizer.run(feed_dict=feed_dict)
+                train_summary = sess.run(train_summary_ops, feed_dict=feed_dict)
+                summary_writer.add_summary(train_summary, current_step)
+                if current_step % (config.display_step) == 0:
+                    print("step: {}".format(current_step))
+                    print("====validation start====")
+                    batch_val = batch_iter(c = val[2],
+                                           q = val[0],
+                                           l = val[3],
+                                           a = val[1],
+                                           c_real_len=val[4],
+                                           q_real_len=train[5],
+                                           num_epochs=1,
+                                           batch_size=config.batch_size)
+                    accs = []
+                    for val in batch_val:
+                        c_val, q_val, l_val, a_val, c_real_len_val, q_real_len_val = zip(*val)
+                        feed_dict = {rn.context: c_val,
+                                     rn.question: q_val,
+                                     rn.label: l_val,
+                                     rn.answer: a_val,
+                                     rn.context_real_len: c_real_len_val,
+                                     rn.question_real_len: q_real_len_val,
+                                     rn.is_training: False}
+                        acc = rn.accuracy.eval(feed_dict=feed_dict)
+                        accs.append(acc)
+                        val_summary = sess.run(val_summary_ops, feed_dict=feed_dict)
+                        summary_writer.add_summary(val_summary, current_step)
+                    print("Mean accuracy=" + str(sum(accs) / len(accs)))
+                    saver.save(sess, save_path=save_summary_path, global_step=current_step)
+                    print("====training====")
+        end_time = time()
 
 if __name__ == '__main__' :
     main()
