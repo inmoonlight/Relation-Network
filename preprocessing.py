@@ -2,6 +2,7 @@ import numpy as np
 import os
 import pickle
 import re
+import sys
 
 class Preprocess():
 
@@ -270,8 +271,8 @@ class Preprocess():
         with open(os.path.join(self.path_to_processed, 'test_dataset.pkl', 'wb')) as f:
             pickle.dump(test_dataset, f)
 
-def main():
-    preprocess = Preprocess("./babi_original") # use argparse!
+def main(path_to_babi):
+    preprocess = Preprocess(path_to_babi) 
     preprocess.set_path()
     preprocess._set_word_set()
     preprocess.load_train()
@@ -279,4 +280,5 @@ def main():
     preprocess.load_test()
 
 if __name__ == '__main__':
-    main()
+    path_to_babi = sys.argv()[3]
+    main(path_to_babi)
