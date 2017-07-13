@@ -1,20 +1,18 @@
 import numpy as np
 import os
 import pickle
-import sys
-sys.path.append('../')
 
 from datetime import datetime
 import tensorflow as tf
 from time import time
-import Model
 
-def read_data(file_path = './babi_preprocessed'):
-    with open(file_path+'/train_dataset_masked.pkl', 'rb') as f:
+import config
+import model
+
+def read_data(file_path= config.babi_processed):
+    with open(os.path.join(file_path, 'train_dataset_masked.pkl'), 'rb') as f:
         train = pickle.load(f)
-    with open(file_path+'/test_dataset_masked.pkl', 'rb') as f:
-        test = pickle.load(f)
-    with open(file_path+'/val_dataset_masked.pkl', 'rb') as f:
+    with open(os.path.join(file_path, 'val_dataset_masked.pkl'), 'rb') as f:
         val = pickle.load(f)
 
     [train_q, train_a, train_c, train_l, train_c_real_len, train_q_real_len] = train
@@ -26,8 +24,7 @@ def read_data(file_path = './babi_preprocessed'):
            [test_q, test_a, test_c, test_l, test_c_real_len, test_q_real_len])
 
 
-def batch_iter(c, q, l, a, c_real_len, q_real_len, batch_size, num_epochs, shuffle=True,
-               is_training=True):
+def batch_iter(c, q, l, a, c_real_len, q_real_len, batch_size, num_epochs, shuffle=True):
     """
     Generates a batch iterator for a dataset.
     """
@@ -40,8 +37,6 @@ def batch_iter(c, q, l, a, c_real_len, q_real_len, batch_size, num_epochs, shuff
     data_size = len(q)
     num_batches_per_epoch = int(data_size / batch_size) + 1
     for epoch in range(num_epochs):
-        # if is_training:
-        #     alarm.send_message('RN training...epoch {}'.format(epoch + 1))
         print("In epoch >> " + str(epoch + 1))
         print("num batches per epoch is: " + str(num_batches_per_epoch))
         # Shuffle the data at each epoch
@@ -99,7 +94,7 @@ FLAGS = flags.FLAGS
 def main():
     config = parse_config(open('config.txt', 'r'))
     date = datetime.fromtimestamp(time()).strftime('%Y-%m-%d_%H:%M:%S')
-    model_id = "RN" + date
+    model_id = "RN-" + date
 
     save_dir = flags.save_dir
     save_summary_path = os.path.join(save_dir, 'model_summary')
@@ -117,22 +112,20 @@ def main():
         sess = tf.Session()
         start_time = time()
         with sess.as_default():
-            rn = Model(config)
+            rn = model(config)
 
             # Define Training procedure
             global_step = tf.Variable(0, name='global_step', trainable = False)
-            optimizer = tf.train.Adamoptimizer(config.learning_rate)
-            grads_and_vars = optimizer.compute_gradients(rn.loss)
-            train_op = optimizer.apply_gradients(grads_and_vars, global_step = global_step)
+            opt = tf.train.Adamoptimizer(config.learning_rate)
+            optimizer = opt.minimize(rn.loss, global_step = global_step)
 
-            accuracy_train = tf.summary.scalar("accuracy_train", rn.accuracy)
             loss_train = tf.summary.scalar("loss_train", rn.loss)
+            accuracy_train = tf.summary.scalar("accuracy_train", rn.accuracy)
             train_summary_ops = tf.summary.merge([loss_train, accuracy_train])
 
-            accuracy_val = tf.summar("accuracy_val", rn.accuracy)
             loss_val = tf.summary.scalar("loss_val", rn.loss)
+            accuracy_val = tf.summar("accuracy_val", rn.accuracy)
             val_summary_ops = tf.summary.merge([loss_val, accuracy_val])
-
 
             saver = tf.train.Saver(tf.global_variables(),max_to_keep=4)
             sess.run(tf.global_variables_initializer())
@@ -188,6 +181,7 @@ def main():
                     saver.save(sess, save_path=save_summary_path, global_step=current_step)
                     print("====training====")
         end_time = time()
+        print("Training finished in {}sec".format(end_time-start_time))
 
 if __name__ == '__main__' :
     main()
