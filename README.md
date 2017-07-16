@@ -2,6 +2,10 @@
 
 paper link: https://arxiv.org/abs/1706.01427
 
-### Tensorflow implementation of RelationNetworks(RNs)
+## Tensorflow implementation of Relation Network on bAbI dataset
 
-We focus on text data such as bAbI and SQaUD
+<img src="https://github.com/juung/juung.github.io/tree/master/assets/images/relation_network_babi.png" width="350”>
+
+** Load data
+```
+python3 preprocessing.py --path='path-where-tasks_1-20_v1-2-located'
