@@ -4,7 +4,7 @@ paper link: https://arxiv.org/abs/1706.01427
 
 ## Tensorflow implementation of Relation Network on bAbI dataset
 
-<img src = "./image/relation_network_babi.png" width="350">
+<img src = "./image/relation_network_babi.png" width="650">
 
 1. **Load data**
 
