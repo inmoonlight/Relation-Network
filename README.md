@@ -4,7 +4,7 @@ paper link: https://arxiv.org/abs/1706.01427
 
 ## Tensorflow implementation of Relation Network on bAbI dataset
 
-<img src="https://github.com/juung/juung.github.io/tree/master/assets/images/relation_network_babi.png" width="350”>
+<img src="juung.github.io/assets/images/relation_network_babi.png" width="350”>
 
 ** Load data
 ```
