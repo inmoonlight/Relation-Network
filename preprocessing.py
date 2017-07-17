@@ -72,7 +72,7 @@ class Preprocess():
             paragraph.append(d[mark:])
         return paragraphs
 
-    def _split_clqa(self, paragraphs):
+    def _split_clqa(self, paragraphs, show_print= True):
         """
         for each paragraph, split into context, label, question and answer
 
@@ -101,18 +101,19 @@ class Preprocess():
                     question.append(q_a_ah[0].strip().lower())
                     answer.append(q_a_ah[1].strip().lower())
         # check
-        if (len(question) == len(answer)) & (len(answer) == len(context)) & (len(context) == len(label)):
-            print("bAbI is well separated into question, answer, context, and label!")
-            print("total: {}".format(len(label)))
-        else:
-            print("Something is missing! check again")
-            print("the number of questions: {}".format(len(question)))
-            print("the number of answers: {}".format(len(answer)))
-            print("the number of contexts: {}".format(len(context)))
-            print("the number of labels: {}".format(len(label)))
+        if show_print:
+            if (len(question) == len(answer)) & (len(answer) == len(context)) & (len(context) == len(label)):
+                print("bAbI is well separated into question, answer, context, and label!")
+                print("total: {}".format(len(label)))
+            else:
+                print("Something is missing! check again")
+                print("the number of questions: {}".format(len(question)))
+                print("the number of answers: {}".format(len(answer)))
+                print("the number of contexts: {}".format(len(context)))
+                print("the number of labels: {}".format(len(label)))
         return context, label, question, answer
 
-    def split_all_clqa(self, paths):
+    def split_all_clqa(self, paths, show_print= True):
         """
         merge all 20 babi tasks into one dataset
 
@@ -133,10 +134,12 @@ class Preprocess():
             questions = []
             answers = []
             for path in paths:
-                print('=================')
+                if show_print:
+                    print('=================')
                 paragraphs = self._split_paragraphs(path)
-                print("data: {}".format(os.path.basename(path)))
-                context, label, question, answer = self._split_clqa(paragraphs)
+                if show_print:
+                    print("data: {}".format(os.path.basename(path)))
+                context, label, question, answer = self._split_clqa(paragraphs, show_print=show_print)
                 contexts.extend(context)
                 labels.extend(label)
                 questions.extend(question)
@@ -147,9 +150,9 @@ class Preprocess():
         c_word_set = set()
         q_word_set = set()
         a_word_set = set()
-        train_context, train_label, train_question, train_answer = self.split_all_clqa(self.train_paths)
-        val_context, val_label, val_question, val_answer = self.split_all_clqa(self.val_paths)
-        test_context, test_label, test_question, test_answer = self.split_all_clqa(self.test_paths)
+        train_context, train_label, train_question, train_answer = self.split_all_clqa(self.train_paths, show_print=False)
+        val_context, val_label, val_question, val_answer = self.split_all_clqa(self.val_paths, show_print=False)
+        test_context, test_label, test_question, test_answer = self.split_all_clqa(self.test_paths, show_print=False)
         list_of_context = [train_context, val_context, test_context]
         list_of_question = [train_question, val_question, test_question]
         list_of_answer = [train_answer, val_answer, test_answer]
@@ -301,9 +304,9 @@ class Preprocess():
                 if (len(context) != self.s_max_len) | (len(q) != self.q_max_len) | (len(l) != self.c_max_len):
                     cnt += 1
         if cnt == 0:
-            print("Masking success!")
+            print("Train Masking success!")
         else:
-            print("Masking process error")
+            print("Train Masking process error")
         train_dataset = (train_question_masked, train_answer_index, train_context_masked, train_label_masked, train_context_real_len, train_question_real_len)
         if not os.path.exists(self.path_to_processed):
             os.makedirs(self.path_to_processed)
@@ -324,9 +327,9 @@ class Preprocess():
                 if (len(context) != self.s_max_len) | (len(q) != self.q_max_len) | (len(l) != self.c_max_len):
                     cnt += 1
         if cnt == 0:
-            print("Masking success!")
+            print("Val Masking success!")
         else:
-            print("Masking process error")
+            print("Val Masking process error")
         val_dataset = (val_question_masked, val_answer_index, val_context_masked, val_label_masked, val_context_real_len, val_question_real_len)
         if not os.path.exists(self.path_to_processed):
             os.makedirs(self.path_to_processed)
@@ -353,9 +356,9 @@ class Preprocess():
                 if (len(context) != self.s_max_len) | (len(q) != self.q_max_len) | (len(l) != self.c_max_len):
                     cnt += 1
         if cnt == 0:
-            print("Masking success!")
+            print("Test Masking success!")
         else:
-            print("Masking process error")
+            print("Test Masking process error")
         test_dataset = (test_question_masked, test_answer_index, test_context_masked, test_label_masked, test_context_real_len, test_question_real_len)
         if not os.path.exists(self.path_to_processed):
             os.makedirs(self.path_to_processed)
