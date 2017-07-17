@@ -250,7 +250,7 @@ class Preprocess():
         context_real_len = []
         question_real_len = []
         # cs: one context
-        for cs, l, q in tqdm(zip(context_index, label_index, question_index)):
+        for cs, l, q in zip(context_index, label_index, question_index):
             context_masked_tmp = []
             context_real_length_tmp = []
             # cs: many sentences
