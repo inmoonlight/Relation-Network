@@ -293,7 +293,7 @@ class Preprocess():
         for question in train_question_index:
             if len(question) > self.q_max_len:
                 self.q_max_len = len(question)
-        train_context_masked, train_question_masked, train_label_masked, train_context_real_len, train_question_real_len= masking(train_context_index, train_label_index, train_question_index)
+        train_context_masked, train_question_masked, train_label_masked, train_context_real_len, train_question_real_len= self.masking(train_context_index, train_label_index, train_question_index)
         # check masking
         cnt = 0
         for c,q,l in zip(train_context_masked, train_question_masked, train_label_masked):
@@ -316,7 +316,7 @@ class Preprocess():
         val_label_index = self._index_label(val_label)
         val_question_index = self._index_question(val_question)
         val_answer_index = self._index_answer(val_answer)
-        val_context_masked, val_question_masked, val_label_masked, val_context_real_len, val_question_real_len= masking(val_context_index, val_label_index, val_question_index)
+        val_context_masked, val_question_masked, val_label_masked, val_context_real_len, val_question_real_len= self.masking(val_context_index, val_label_index, val_question_index)
         # check masking
         cnt = 0
         for c,q,l in zip(val_context_masked, val_question_masked, val_label_masked):
@@ -345,7 +345,7 @@ class Preprocess():
         test_label_index = self._index_label(test_label)
         test_question_index = self._index_question(test_question)
         test_answer_index = self._index_answer(test_answer)
-        test_context_masked, test_question_masked, test_label_masked, test_context_real_len, test_question_real_len= masking(test_context_index, test_label_index, test_question_index)
+        test_context_masked, test_question_masked, test_label_masked, test_context_real_len, test_question_real_len= self.masking(test_context_index, test_label_index, test_question_index)
         # check masking
         cnt = 0
         for c,q,l in zip(test_context_masked, test_question_masked, test_label_masked):
