@@ -4,7 +4,7 @@ from tensorflow.contrib.layers import batch_norm
 from tensorflow.contrib.layers import fully_connected
 from tensorflow.contrib import rnn
 
-class Model(object):
+class Model():
 
     def __init__(self,
                  config,
@@ -63,7 +63,7 @@ class Model(object):
         )
         self.answer = tf.placeholder(
             dtype=tf.float32,
-            shape=[self.batch_size, self.answer_cand],
+            shape=[self.batch_size, self.answer_vocab_size],
             name="answer"
         )
         self.is_training = tf.placeholder(
@@ -80,17 +80,17 @@ class Model(object):
 
     def embed_matrix(self):
         self.c_word_embed_matrix = tf.Variable(
-            tf.random_uniform(shape=[self.c_vocab_size, self.c_word_embed],
+            tf.random_uniform(shape=[self.context_vocab_size, self.c_word_embed],
                               minval=-1,
                               maxval=1,
                               seed= self.seed))
         self.q_word_embed_matrix = tf.Variable(
-            tf.random_uniform(shape=[self.q_vocab_size, self.q_word_embed],
+            tf.random_uniform(shape=[self.question_vocab_size, self.q_word_embed],
                               minval=-1,
                               maxval=1,
                               seed=self.seed))
 
-    def contextLSTM(c, l, c_real_len, reuse = False, scope = "ContextLSTM"):
+    def contextLSTM(self, c, l, c_real_len, reuse = False, scope = "ContextLSTM"):
 
         def sentenceLSTM(s,
                          s_real_len,
@@ -137,7 +137,7 @@ class Model(object):
         tagged_c_objects = tf.unstack(c_embedded, axis=1)
         return tagged_c_objects
 
-    def questionLSTM(q, q_real_len, reuse = False, scope= "questionLSTM"):
+    def questionLSTM(self, q, q_real_len, reuse = False, scope= "questionLSTM"):
         """
         Args
             q: zero padded qeustions, shape=[batch_size, q_max_len]
@@ -154,9 +154,10 @@ class Model(object):
         outputs = tf.stack(outputs)
         outputs = tf.transpose(outputs, [1,0,2])
         index = tf.range(0, self.batch_size) * (self.q_max_len) + (q_real_len - 1)
+        outputs = tf.gather(tf.reshape(outputs, [-1, self.s_hidden]), index)
         return outputs
 
-    def convert_to_RN_input(embedded_c, embedded_q):
+    def convert_to_RN_input(self, embedded_c, embedded_q):
         """
         Args
             embedded_c: output of contextLSTM, 20 length list of embedded sentences
@@ -176,7 +177,7 @@ class Model(object):
 
         return tf.concat(RN_inputs, axis=0)
 
-    def batch_norm_relu(inputs, output_shape, phase = True, scope = None, activation = True):
+    def batch_norm_relu(self, inputs, output_shape, phase = True, scope = None, activation = True):
         with tf.variable_scope(scope):
             h1 = fully_connected(inputs, output_shape, activation_fn= None, scope ="dense")
             h2 = batch_norm(h1, decay = 0.95, center = True, scale = True,
@@ -187,7 +188,7 @@ class Model(object):
                 out = h2
             return out
 
-    def g_theta(RN_input, scope='g_theta', reuse = True, phase = True):
+    def g_theta(self, RN_input, scope='g_theta', reuse = True, phase = True):
         """
         Args
             RN_input: [o_i, o_j, q], shape = [batch_size*190, 136]
@@ -198,14 +199,14 @@ class Model(object):
         input_dim = RN_input.shape[1]
         g_units = [256,256,256,256]
         with tf.variable_scope(scope, reuse = reuse) as scope:
-            g_1 = batch_norm_relu(RN_input, g_units[0], scope= 'g_1', phase = phase)
-            g_2 = batch_norm_relu(g_1, g_units[1], scope='g_2', phase=phase)
-            g_3 = batch_norm_relu(g_2, g_units[2], scope='g_3', phase=phase)
-            g_4 = batch_norm_relu(g_3, g_units[3], scope='g_4', phase=phase)
+            g_1 = self.batch_norm_relu(RN_input, g_units[0], scope= 'g_1', phase = phase)
+            g_2 = self.batch_norm_relu(g_1, g_units[1], scope='g_2', phase=phase)
+            g_3 = self.batch_norm_relu(g_2, g_units[2], scope='g_3', phase=phase)
+            g_4 = self.batch_norm_relu(g_3, g_units[3], scope='g_4', phase=phase)
         g_output = tf.reshape(g_4, shape= [-1, self.batch_size, g_units[3]])
         return g_output
 
-    def f_phi(g, scope = "f_phi", reuse = True , phase = True):
+    def f_phi(self, g, scope = "f_phi", reuse = True , phase = True):
         """
         Args
             g: g_theta result, shape = [190, batch_size, 256]
@@ -216,9 +217,9 @@ class Model(object):
         f_input = tf.reduce_sum(g, axis=0)
         f_units = [256,512,159]
         with tf.variable_scope(scope, reuse = reuse) as scope:
-            f_1 = batch_norm_relu(f_input, f_units[0], scope = "f_1", phase = phase)
-            f_2 = batch_norm_relu(f_1, f_units[1], scope = "f_2", phase = phase)
-            f_3 = batch_norm_relu(f_2, f_units[2], scope = "f_3", phase = phase)
+            f_1 = self.batch_norm_relu(f_input, f_units[0], scope = "f_1", phase = phase)
+            f_2 = self.batch_norm_relu(f_1, f_units[1], scope = "f_2", phase = phase)
+            f_3 = self.batch_norm_relu(f_2, f_units[2], scope = "f_3", phase = phase)
         return f_3
 
     def build(self, is_train = True):
