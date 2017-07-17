@@ -293,22 +293,27 @@ class Preprocess():
 
 def get_args_parser():
     """
-    python preprocessing.py -path ../ -batch_size 64 -hidden_units 32 -learning_rate 2e-4 -iter_time 150 -display_step 100
+    python preprocessing.py --path ../ --batch_size 64 --hidden_units 32 --learning_rate 2e-4 --iter_time 150 --display_step 100
     :return:
     """
     _parser = argparse.ArgumentParser()
-    _parser.add_argument('-path', '--path_to_babi')
-    _parser.add_argument('-batch_size', '--batch_size')
-    _parser.add_argument('-hidden_units', '--hidden_units')
-    _parser.add_argument('-learning_rate', '--learning_rate')
-    _parser.add_argument('-iter_time', '--iter_time')
-    _parser.add_argument('-display_step', '--display_step')
+    _parser.add_argument('--path', '--path_to_babi')
+    _parser.add_argument('--batch_size', '--batch_size')
+    _parser.add_argument('--hidden_units', '--hidden_units')
+    _parser.add_argument('--learning_rate', '--learning_rate')
+    _parser.add_argument('--iter_time', '--iter_time')
+    _parser.add_argument('--display_step', '--display_step')
     return _parser
+
+def default_write(f, string, default_value):
+    if string == None:
+        f.write(str(default_value) + "\t")
+    else:
+        f.write(str(string) + "\t")
 
 def main():
     args = get_args_parser().parse_args()
-
-    preprocess = Preprocess(args.path_to_babi)
+    preprocess = Preprocess(args.path)
     preprocess.set_path()
     preprocess._set_word_set()
     preprocess.load_train()
@@ -320,12 +325,15 @@ def main():
         f.write(str(preprocess.s_max_len)+"\t")
         f.write(str(preprocess.q_max_len)+"\t")
         f.write(str(preprocess.path_to_processed)+'\t')
-        f.write(str(args.batch_size)+"\t") # batch_size
-        f.write(str(args.hidden_units)+"\t") # hidden units
-        f.write(str(args.learning_rate) + "\t")  # hidden units
-        f.write(str(args.iter_time) + "\t")  # hidden units
-        f.write(str(args.display_step) + "\t")  # hidden units
-
-
+        default_write(f, args.batch_size, 64)
+        default_write(f, args.hidden_units, 32)
+        default_write(f, args.learning_rate, 2e-4)
+        default_write(f, args.iter_time, 150)
+        default_write(f, args.display_step, 100)
+        #f.write(str(args.batch_size)+"\t") # batch_size
+        #f.write(str(args.hidden_units)+"\t") # hidden units
+        #f.write(str(args.learning_rate) + "\t")  # hidden units
+        #f.write(str(args.iter_time) + "\t")  # hidden units
+        #f.write(str(args.display_step) + "\t")  # hidden units
 if __name__ == '__main__':
     main()
