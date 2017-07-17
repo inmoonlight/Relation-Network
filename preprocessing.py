@@ -22,6 +22,7 @@ class Preprocess():
         self.c_max_len = 20
         self.s_max_len = 0
         self.q_max_len = 0
+        self.mask_index = 0
 
     def set_path(self):
         """
@@ -109,13 +110,6 @@ class Preprocess():
             print("the number of answers: {}".format(len(answer)))
             print("the number of contexts: {}".format(len(context)))
             print("the number of labels: {}".format(len(label)))
-        for q in question:
-            if len(q) > self.q_max_len:
-                self.q_max_len = len(q)
-        for c in context:
-            for s in c:
-                if len(s) > self.s_max_len:
-                    self.s_max_len = len(s)
         return context, label, question, answer
 
     def split_all_clqa(self, paths):
@@ -249,13 +243,68 @@ class Preprocess():
             pickle.dump(a_word_dict, f)
         return indexed_as
 
+    def masking(self, context_index, label_index, question_index):
+        context_masked = []
+        question_masked = []
+        label_masked = []
+        context_real_len = []
+        question_real_len = []
+        # cs: one context
+        for cs, l, q in tqdm(zip(context_index, label_index, question_index)):
+            context_masked_tmp = []
+            context_real_length_tmp = []
+            # cs: many sentences
+            for context in cs:
+                context_real_length_tmp.append(len(context))
+                diff = self.s_max_len - len(context)
+                if (diff > 0):
+                    context_mask = np.append(context, [self.mask_index]*diff, axis=0)
+                    context_masked_tmp.append(context_mask.tolist())
+                else:
+                    context_masked_tmp.append(context)
+            diff_c = self.c_max_len - len(cs)
+            context_masked_tmp.extend([[0]*self.s_max_len]*diff_c)
+            context_masked.append(context_masked_tmp)
+
+            diff_q = self.q_max_len - len(q)
+            question_real_len.append(len(q))
+            question_masked_tmp = np.array(np.append(q, [self.mask_index]*diff_q, axis=0))
+            question_masked.append(question_masked_tmp.tolist())
+            
+            diff_l = self.c_max_len - len(l)
+            label_masked_tmp = np.append(l, np.zeros((diff_l, self.c_max_len)), axis= 0)
+            label_masked.append(label_masked_tmp.tolist())
+            context_real_length_tmp.extend([0]*diff_l)
+            context_real_len.append(context_real_length_tmp)
+        return context_masked, question_masked, label_masked, context_real_len, question_real_len
+
     def load_train(self):
         train_context, train_label, train_question, train_answer = self.split_all_clqa(self.train_paths)
         train_context_index = self._index_context(train_context)
         train_label_index = self._index_label(train_label)
         train_question_index = self._index_question(train_question)
         train_answer_index = self._index_answer(train_answer)
-        train_dataset = (train_question_index, train_answer_index, train_context_index, train_label_index)
+        # check max sentence length
+        for context in train_context_index:
+            for sentence in context:
+                if len(sentence) > self.s_max_len:
+                    self.s_max_len = len(sentence)
+        # check max question length
+        for question in train_question_index:
+            if len(question) > self.q_max_len:
+                self.q_max_len = len(question)
+        train_context_masked, train_question_masked, train_label_masked, train_context_real_len, train_question_real_len= masking(train_context_index, train_label_index, train_question_index)
+        # check masking
+        cnt = 0
+        for c,q,l in zip(train_context_masked, train_question_masked, train_label_masked):
+            for context in c:
+                if (len(context) != self.s_max_len) | (len(q) != self.q_max_len) | (len(l) != self.c_max_len):
+                    cnt += 1
+        if cnt == 0:
+            print("Masking success!")
+        else:
+            print("Masking process error")
+        train_dataset = (train_question_masked, train_answer_index, train_context_masked, train_label_masked, train_context_real_len, train_question_real_len)
         if not os.path.exists(self.path_to_processed):
             os.makedirs(self.path_to_processed)
         with open(os.path.join(self.path_to_processed, 'train_dataset.pkl'), 'wb') as f:
@@ -267,7 +316,18 @@ class Preprocess():
         val_label_index = self._index_label(val_label)
         val_question_index = self._index_question(val_question)
         val_answer_index = self._index_answer(val_answer)
-        val_dataset = (val_question_index, val_answer_index, val_context_index, val_label_index)
+        val_context_masked, val_question_masked, val_label_masked, val_context_real_len, val_question_real_len= masking(val_context_index, val_label_index, val_question_index)
+        # check masking
+        cnt = 0
+        for c,q,l in zip(val_context_masked, val_question_masked, val_label_masked):
+            for context in c:
+                if (len(context) != self.s_max_len) | (len(q) != self.q_max_len) | (len(l) != self.c_max_len):
+                    cnt += 1
+        if cnt == 0:
+            print("Masking success!")
+        else:
+            print("Masking process error")
+        val_dataset = (val_question_masked, val_answer_index, val_context_masked, val_label_masked, val_context_real_len, val_question_real_len)
         if not os.path.exists(self.path_to_processed):
             os.makedirs(self.path_to_processed)
         with open(os.path.join(self.path_to_processed, 'val_dataset.pkl'), 'wb') as f:
@@ -285,7 +345,18 @@ class Preprocess():
         test_label_index = self._index_label(test_label)
         test_question_index = self._index_question(test_question)
         test_answer_index = self._index_answer(test_answer)
-        test_dataset = (test_question_index, test_answer_index, test_context_index, test_label_index)
+        test_context_masked, test_question_masked, test_label_masked, test_context_real_len, test_question_real_len= masking(test_context_index, test_label_index, test_question_index)
+        # check masking
+        cnt = 0
+        for c,q,l in zip(test_context_masked, test_question_masked, test_label_masked):
+            for context in c:
+                if (len(context) != self.s_max_len) | (len(q) != self.q_max_len) | (len(l) != self.c_max_len):
+                    cnt += 1
+        if cnt == 0:
+            print("Masking success!")
+        else:
+            print("Masking process error")
+        test_dataset = (test_question_masked, test_answer_index, test_context_masked, test_label_masked, test_context_real_len, test_question_real_len)
         if not os.path.exists(self.path_to_processed):
             os.makedirs(self.path_to_processed)
         with open(os.path.join(self.path_to_processed, 'test_dataset.pkl'), 'wb') as f:
@@ -330,10 +401,5 @@ def main():
         default_write(f, args.learning_rate, 2e-4)
         default_write(f, args.iter_time, 150)
         default_write(f, args.display_step, 100)
-        #f.write(str(args.batch_size)+"\t") # batch_size
-        #f.write(str(args.hidden_units)+"\t") # hidden units
-        #f.write(str(args.learning_rate) + "\t")  # hidden units
-        #f.write(str(args.iter_time) + "\t")  # hidden units
-        #f.write(str(args.display_step) + "\t")  # hidden units
 if __name__ == '__main__':
     main()
