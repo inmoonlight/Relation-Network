@@ -6,12 +6,12 @@ from datetime import datetime
 import tensorflow as tf
 from time import time
 
-import model
+from model import Model
 
-def read_data(file_path= config['babi_processed']):
-    with open(os.path.join(file_path, 'train_dataset_masked.pkl'), 'rb') as f:
+def read_data(file_path):
+    with open(os.path.join(file_path, 'train_dataset.pkl'), 'rb') as f:
         train = pickle.load(f)
-    with open(os.path.join(file_path, 'val_dataset_masked.pkl'), 'rb') as f:
+    with open(os.path.join(file_path, 'val_dataset.pkl'), 'rb') as f:
         val = pickle.load(f)
 
     [train_q, train_a, train_c, train_l, train_c_real_len, train_q_real_len] = train
@@ -63,16 +63,7 @@ def batch_iter(c, q, l, a, c_real_len, q_real_len, batch_size, num_epochs, shuff
                                                                                          a_shuffled[start_index:end_index], \
                                                                                          c_real_len_shuffled[start_index:end_index], \
                                                                                          q_real_len_shuffled[start_index:end_index]
-            else:
-                end_index = data_size
-                start_index = end_index - batch_size
-                c_batch, q_batch, l_batch, a_batch, c_real_len_batch, q_real_len_batch = c_shuffled[start_index:end_index], \
-                                                                                         q_shuffled[start_index:end_index], \
-                                                                                         l_shuffled[start_index:end_index], \
-                                                                                         a_shuffled[start_index:end_index], \
-                                                                                         c_real_len_shuffled[start_index:end_index], \
-                                                                                         q_real_len_shuffled[start_index:end_index]
-            yield list(zip(c_batch, q_batch, l_batch, a_batch, c_real_len_batch, q_real_len_batch))
+                yield list(zip(c_batch, q_batch, l_batch, a_batch, c_real_len_batch, q_real_len_batch))
 
 def parse_config(string):
     #parsing txt file
@@ -93,19 +84,16 @@ def parse_config(string):
 #flags setting
 flags = tf.app.flags
 
-# flags.Define
-flags.DEFINE_string('save_dir', 'path', 'description')  # './babi_result/lookup_table/%s'
-# flags.DEFINE_string('save_summary_path', 'path', 'description')  # os.path.join(save_dir, 'model_summary')
-# flags.DEFINE_string('save_variable_path', 'path', 'description')  # os.path.join(save_dir, 'model_variables')
-FLAGS = flags.FLAGS
+
 
 def main():
     global config
-    config = parse_config(open('config.txt', 'r'))
+    with open('config.txt', 'r') as f:
+        config = parse_config(f.readline())
     date = datetime.fromtimestamp(time()).strftime('%Y-%m-%d_%H:%M:%S')
     model_id = "RN-" + date
 
-    save_dir = flags.save_dir
+    save_dir = "./result/" + model_id
     save_summary_path = os.path.join(save_dir, 'model_summary')
     save_variable_path = os.path.join(save_dir, 'model_variables')
 
@@ -114,18 +102,18 @@ def main():
         os.makedirs(save_summary_path)
         os.makedirs(save_variable_path)
 
-    (train, val) = read_data()
+    (train_dataset, val_dataset) = read_data(config['babi_processed'])
     # rain_q, train_a, train_c, train_l, train_c_real_len, train_q_real_len
 
     with tf.Graph().as_default():
         sess = tf.Session()
         start_time = time()
         with sess.as_default():
-            rn = model(config)
+            rn = Model(config)
 
             # Define Training procedure
             global_step = tf.Variable(0, name='global_step', trainable = False)
-            opt = tf.train.Adamoptimizer(config['learning_rate'])
+            opt = tf.train.AdamOptimizer(config['learning_rate'])
             optimizer = opt.minimize(rn.loss, global_step = global_step)
 
             loss_train = tf.summary.scalar("loss_train", rn.loss)
@@ -133,19 +121,19 @@ def main():
             train_summary_ops = tf.summary.merge([loss_train, accuracy_train])
 
             loss_val = tf.summary.scalar("loss_val", rn.loss)
-            accuracy_val = tf.summar("accuracy_val", rn.accuracy)
+            accuracy_val = tf.summary.scalar("accuracy_val", rn.accuracy)
             val_summary_ops = tf.summary.merge([loss_val, accuracy_val])
 
             saver = tf.train.Saver(tf.global_variables(),max_to_keep=4)
             sess.run(tf.global_variables_initializer())
 
             summary_writer = tf.summary.FileWriter(save_summary_path, sess.graph)
-            batch_train = batch_iter(c=train[2],
-                                     q=train[0],
-                                     l=train[3],
-                                     a=train[1],
-                                     c_real_len=train[4],
-                                     q_real_len=train[5],
+            batch_train = batch_iter(c=train_dataset[2],
+                                     q=train_dataset[0],
+                                     l=train_dataset[3],
+                                     a=train_dataset[1],
+                                     c_real_len=train_dataset[4],
+                                     q_real_len=train_dataset[5],
                                      num_epochs=config['iter_time'],
                                      batch_size= config['batch_size'])
             for train in batch_train:
@@ -164,12 +152,12 @@ def main():
                 if current_step % (config['display_step']) == 0:
                     print("step: {}".format(current_step))
                     print("====validation start====")
-                    batch_val = batch_iter(c = val[2],
-                                           q = val[0],
-                                           l = val[3],
-                                           a = val[1],
-                                           c_real_len=val[4],
-                                           q_real_len=train[5],
+                    batch_val = batch_iter(c = val_dataset[2],
+                                           q = val_dataset[0],
+                                           l = val_dataset[3],
+                                           a = val_dataset[1],
+                                           c_real_len=val_dataset[4],
+                                           q_real_len=val_dataset[5],
                                            num_epochs=1,
                                            batch_size=config['batch_size'])
                     accs = []
