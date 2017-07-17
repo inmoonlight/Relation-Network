@@ -315,7 +315,7 @@ def main():
     preprocess.load_val()
     preprocess.load_test()
 
-    with open(os.path.join(preprocess.path_to_processed, 'config.txt'), 'w') as f:
+    with open(os.path.join('config.txt'), 'w') as f:
         f.write(str(preprocess.c_max_len)+"\t")
         f.write(str(preprocess.s_max_len)+"\t")
         f.write(str(preprocess.q_max_len)+"\t")
