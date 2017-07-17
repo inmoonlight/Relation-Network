@@ -9,12 +9,12 @@ class Preprocess():
 
 
     def __init__(self, path_to_babi):
-        # path_to_babi example: '././babi_origianl'
+        # path_to_babi example: '././babi_original'
         self.path_to_babi = os.path.join(path_to_babi, "tasks_1-20_v1-2/en-valid-10k")
         self.train_paths = None
         self.val_paths = None
         self.test_paths = None
-        self.path_to_processed = os.path.join(path_to_babi, "babi_processed")
+        self.path_to_processed = "./babi_processed"
         self._c_word_set = set()
         self._q_word_set = set()
         self._a_word_set = set()
