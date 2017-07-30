@@ -36,7 +36,7 @@ total: **15**/20
 ### Prerequisites
 
 * Python 3.5+ 
-* Tensorflow 1.0.1 
+* Tensorflow-gpu 1.2.1 
 * Numpy 
 * argparse 
 * itertools 
