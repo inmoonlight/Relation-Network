@@ -37,7 +37,7 @@ total: **15**/20 (with sentence position), **14**/20 (without sentence position)
 ### Prerequisites
 
 * Python 3.5+ 
-* Tensorflow-gpu 1.2.1 
+* Tensorflow-gpu 1.1 +
 * Numpy 
 * argparse 
 * itertools 
