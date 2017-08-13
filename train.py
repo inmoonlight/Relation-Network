@@ -81,10 +81,6 @@ def parse_config(string):
     result['display_step'] = 100
     return result
 
-#flags setting
-flags = tf.app.flags
-
-
 
 def main():
     global config
@@ -103,7 +99,6 @@ def main():
         os.makedirs(save_variable_path)
 
     (train_dataset, val_dataset) = read_data(config['babi_processed'])
-    # rain_q, train_a, train_c, train_l, train_c_real_len, train_q_real_len
 
     with tf.Graph().as_default():
         sess = tf.Session()
