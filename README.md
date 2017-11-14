@@ -10,28 +10,28 @@ paper link: https://arxiv.org/abs/1706.01427
 
 |         |               Accuracy              | Success / Fail |  
 |:-------:|:------------------------------------|----------------|
-|  Task 1 |                0.994                |        S       |               
-|  Task 2 |                0.995               |        S       |              
-|  Task 3 |                0.999                |        S       |              
-|  Task 4 |                0.956                  |        S       |               
-|  Task 5 |                0.999                |        S       |              
-|  Task 6 |                0.987                |        S       |              
-|  Task 7 |                0.997               |        S       |                 
-|  Task 8 |                0.998               |        S       |                
-|  Task 9 |                0.868                |        F       |                
+|  Task 1 |                1                |        S       |               
+|  Task 2 |                0.935               |        F       |              
+|  Task 3 |                0.871                |        F       |              
+|  Task 4 |                1                  |        S       |               
+|  Task 5 |                0.995                |        S       |              
+|  Task 6 |                1                |        S       |              
+|  Task 7 |                0.998               |        S       |                 
+|  Task 8 |                0.999               |        S       |                
+|  Task 9 |                1                |        S       |                
 | Task 10 |                1               |        S       |               
-| Task 11 |                0.998                |        S       |                
+| Task 11 |                0.996                |        S       |                
 | Task 12 |                1                |        S       |                
-| Task 13 |                  0.996              |        S       |                
+| Task 13 |                  1              |        S       |                
 | Task 14 |                1                |        S       |                
-| Task 15 |                  0.966              |        S       |               
-| Task 16 |                0.483               |        F       |                
-| Task 17 |                1                |        S       |               
-| Task 18 |                0.999               |        S       |                 
-| Task 19 |                1               |        S       |                
+| Task 15 |                  1              |        S       |               
+| Task 16 |                0.497               |        F       |                
+| Task 17 |                0.991            |        S       |               
+| Task 18 |                0.994               |        S       |                 
+| Task 19 |                0.979           |        S       |                
 | Task 20 |                  1                  |        S       |       
 
-total: **18**/20
+total: **17*/20
 
 ### Prerequisites
 
