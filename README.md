@@ -31,7 +31,7 @@ paper link: https://arxiv.org/abs/1706.01427
 | Task 19 |                0.979           |        S       |                
 | Task 20 |                  1                  |        S       |       
 
-total: **17*/20
+total: **17**/20
 
 ### Prerequisites
 
