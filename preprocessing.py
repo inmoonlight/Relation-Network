@@ -44,9 +44,9 @@ class Preprocess():
                     val_paths.append(os.path.join(dirpath, filename))
                 else:
                     test_paths.append(os.path.join(dirpath, filename))
-        self.train_paths = train_paths
-        self.val_paths = val_paths
-        self.test_paths = test_paths
+        self.train_paths = sorted(train_paths)
+        self.val_paths = sorted(val_paths)
+        self.test_paths = sorted(test_paths)
 
     def _split_paragraphs(self, path_to_file):
         """
