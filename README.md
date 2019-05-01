@@ -1,6 +1,6 @@
 # A simple neural network module for relational reasoning
 
-paper link: https://arxiv.org/abs/1706.01427
+paper link: https://papers.nips.cc/paper/7082-a-simple-neural-network-module-for-relational-reasoning.pdf
 
 ## Tensorflow implementation of Relation Network on bAbI dataset
 
